@@ -9,17 +9,25 @@ export function draw_line(x1, y1, x2, y2, css_color) {
     screenContext.stroke();
 }
 
-export function clear_screen() {
-  screenContext.clearRect(0, 0, 640, 480);
+export function clear_screen(width, height) {
+  screenContext.clearRect(0, 0, width, height);
 }
 
 (async function main() {
   try {
     const { GameData, Game } = await import("/pkg/index.js");
-    const data = GameData.new();
     const game = Game.new();
+    const data = game.data();
 
-    document.addEventListener("keyup", e => {
+    screen.width = data.screen_width();
+    screen.height = data.screen_height();
+    screen.style.border = "1px solid black";
+
+    const screenScale = data.scale();
+    screenContext.scale(screenScale, screenScale);
+    screenContext.translate(0.5, 0.5);
+
+    document.addEventListener("keydown", e => {
       switch (e.key) {
         case "ArrowUp":
           game.move_player(0, 1);
@@ -28,20 +36,20 @@ export function clear_screen() {
           game.move_player(0, -1);
           break;
         case "ArrowLeft":
-          game.move_player(1, 0);
+          game.turn_player(-5);
           break;
         case "ArrowRight":
-          game.move_player(-1, 0);
+          game.turn_player(5);
           break;
       }
     })
 
-    screen.width = data.screen_width();
-    screen.height = data.screen_height();
-    screen.style.border = "1px solid black";
+
+    const projectionWidth = data.projection_width();
+    const projectionHeight = data.projection_width();
 
     const gameLoop = () => {
-      clear_screen();
+      clear_screen(projectionWidth, projectionHeight);
       game.ray_casting();
 
       requestAnimationFrame(gameLoop);

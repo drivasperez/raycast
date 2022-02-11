@@ -12,17 +12,19 @@ mod util;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct GameData {
     screen_width: f32,
     screen_height: f32,
-    render_delay: f32,
     player_fov: f32,
 
-    player_x: i32,
-    player_y: i32,
+    player_x: f32,
+    player_y: f32,
     player_angle: f32,
     raycasting_precision: f32,
     map: &'static [&'static [u8]],
+
+    scale: f32,
 }
 
 #[wasm_bindgen]
@@ -51,7 +53,27 @@ impl GameData {
     }
 
     pub fn increment_angle(&self) -> f32 {
-        self.player_fov / self.screen_width
+        self.player_fov / self.projection_width()
+    }
+
+    pub fn projection_width(&self) -> f32 {
+        self.screen_width / self.scale
+    }
+
+    pub fn projection_height(&self) -> f32 {
+        self.screen_height / self.scale
+    }
+
+    pub fn projection_half_width(&self) -> f32 {
+        self.projection_width() / 2.0
+    }
+
+    pub fn projection_half_height(&self) -> f32 {
+        self.projection_height() / 2.0
+    }
+
+    pub fn scale(&self) -> f32 {
+        self.scale
     }
 }
 
@@ -60,14 +82,15 @@ impl Default for GameData {
         Self {
             screen_width: 640.0,
             screen_height: 480.0,
-            render_delay: 30.0,
             player_fov: 60.0,
 
-            player_x: 2,
-            player_y: 2,
+            player_x: 2.0,
+            player_y: 2.0,
             player_angle: 90.0,
             raycasting_precision: 64.0,
             map: MAP,
+
+            scale: 4.0,
         }
     }
 }
@@ -104,16 +127,24 @@ impl Game {
         }
     }
 
-    pub fn move_player(&mut self, x: i32, y: i32) {
+    pub fn data(&self) -> GameData {
+        self.data.clone()
+    }
+
+    pub fn move_player(&mut self, x: f32, y: f32) {
         self.data.player_x += x;
         self.data.player_y += y;
+    }
+
+    pub fn turn_player(&mut self, deg: f32) {
+        self.data.player_angle += deg;
     }
 
     pub fn ray_casting(&mut self) {
         let data = &self.data;
         let mut ray_angle = data.player_angle - data.player_half_fov();
 
-        for i in 0..data.screen_width as usize {
+        for i in 0..data.projection_width() as usize {
             let mut ray = Ray {
                 x: data.player_x as f32,
                 y: data.player_y as f32,
@@ -131,28 +162,28 @@ impl Game {
             let distance = ((data.player_x as f32 - ray.x).powi(2)
                 + (data.player_y as f32 - ray.y).powi(2))
             .sqrt();
-            let wall_height = f32::floor(data.half_height() / distance);
+            let wall_height = f32::floor(data.projection_half_height() / distance);
 
             let ray_count = i as f32;
             util::draw_line(
                 ray_count,
                 0.0,
                 ray_count,
-                data.half_height() - wall_height,
+                data.projection_half_height() - wall_height,
                 "cyan".to_string(),
             );
             util::draw_line(
                 ray_count,
-                data.half_height() - wall_height,
+                data.projection_half_height() - wall_height,
                 ray_count,
-                data.half_height() + wall_height,
+                data.projection_half_height() + wall_height,
                 "red".to_string(),
             );
             util::draw_line(
                 ray_count,
-                data.half_height() + wall_height,
+                data.projection_half_height() + wall_height,
                 ray_count,
-                data.screen_height,
+                data.projection_height(),
                 "green".to_string(),
             );
 
