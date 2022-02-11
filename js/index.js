@@ -13,6 +13,10 @@ export function clear_screen(width, height) {
   screenContext.clearRect(0, 0, width, height);
 }
 
+export function set_stroke_style(style) {
+  screenContext.strokeStyle = style;
+}
+
 (async function main() {
   try {
     const { GameData, Game } = await import("/pkg/index.js");
@@ -28,20 +32,7 @@ export function clear_screen(width, height) {
     screenContext.translate(0.5, 0.5);
 
     document.addEventListener("keydown", e => {
-      switch (e.key) {
-        case "ArrowUp":
-          game.move_player(0, 1);
-          break;
-        case "ArrowDown":
-          game.move_player(0, -1);
-          break;
-        case "ArrowLeft":
-          game.turn_player(-5);
-          break;
-        case "ArrowRight":
-          game.turn_player(5);
-          break;
-      }
+      game.set_held_key(e.which);
     })
 
 
@@ -50,7 +41,7 @@ export function clear_screen(width, height) {
 
     const gameLoop = () => {
       clear_screen(projectionWidth, projectionHeight);
-      game.ray_casting();
+      game.tick();
 
       requestAnimationFrame(gameLoop);
     }

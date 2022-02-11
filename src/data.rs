@@ -1,5 +1,13 @@
 use wasm_bindgen::prelude::*;
 
+#[derive(Clone)]
+pub struct Texture {
+    pub(crate) width: f32,
+    pub(crate) height: f32,
+    pub(crate) bitmap: &'static [&'static [u8]],
+    pub(crate) colors: Vec<String>,
+}
+
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct GameData {
@@ -12,8 +20,12 @@ pub struct GameData {
     pub(crate) player_angle: f32,
     pub(crate) raycasting_precision: f32,
     pub(crate) map: &'static [&'static [u8]],
+    pub(crate) held_key: Option<u32>,
+    pub(crate) player_speed_movement: f32,
+    pub(crate) player_speed_rotation: f32,
 
     pub(crate) scale: f32,
+    pub(crate) textures: Vec<Texture>,
 }
 
 #[wasm_bindgen]
@@ -87,7 +99,25 @@ impl Default for GameData {
             raycasting_precision: 64.0,
             map: MAP,
 
-            scale: 4.0,
+            scale: 1.0,
+            held_key: None,
+            player_speed_movement: 0.5,
+            player_speed_rotation: 5.0,
+            textures: vec![Texture {
+                width: 8.0,
+                height: 8.0,
+                bitmap: &[
+                    &[1, 1, 1, 1, 1, 1, 1, 1],
+                    &[0, 0, 0, 1, 0, 0, 0, 1],
+                    &[1, 1, 1, 1, 1, 1, 1, 1],
+                    &[0, 1, 0, 0, 0, 1, 0, 0],
+                    &[1, 1, 1, 1, 1, 1, 1, 1],
+                    &[0, 0, 0, 1, 0, 0, 0, 1],
+                    &[1, 1, 1, 1, 1, 1, 1, 1],
+                    &[0, 1, 0, 0, 0, 1, 0, 0],
+                ],
+                colors: vec!["brown".to_string(), "orange".to_string()],
+            }],
         }
     }
 }
