@@ -1,6 +1,8 @@
+use data::GameData;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
+mod data;
 mod util;
 
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
@@ -10,103 +12,6 @@ mod util;
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
-#[wasm_bindgen]
-#[derive(Clone)]
-pub struct GameData {
-    screen_width: f32,
-    screen_height: f32,
-    player_fov: f32,
-
-    player_x: f32,
-    player_y: f32,
-    player_angle: f32,
-    raycasting_precision: f32,
-    map: &'static [&'static [u8]],
-
-    scale: f32,
-}
-
-#[wasm_bindgen]
-impl GameData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn screen_width(&self) -> f32 {
-        self.screen_width
-    }
-    pub fn screen_height(&self) -> f32 {
-        self.screen_height
-    }
-
-    pub fn half_width(&self) -> f32 {
-        self.screen_width / 2.0
-    }
-
-    pub fn half_height(&self) -> f32 {
-        self.screen_height / 2.0
-    }
-
-    pub fn player_half_fov(&self) -> f32 {
-        self.player_fov / 2.0
-    }
-
-    pub fn increment_angle(&self) -> f32 {
-        self.player_fov / self.projection_width()
-    }
-
-    pub fn projection_width(&self) -> f32 {
-        self.screen_width / self.scale
-    }
-
-    pub fn projection_height(&self) -> f32 {
-        self.screen_height / self.scale
-    }
-
-    pub fn projection_half_width(&self) -> f32 {
-        self.projection_width() / 2.0
-    }
-
-    pub fn projection_half_height(&self) -> f32 {
-        self.projection_height() / 2.0
-    }
-
-    pub fn scale(&self) -> f32 {
-        self.scale
-    }
-}
-
-impl Default for GameData {
-    fn default() -> Self {
-        Self {
-            screen_width: 640.0,
-            screen_height: 480.0,
-            player_fov: 60.0,
-
-            player_x: 2.0,
-            player_y: 2.0,
-            player_angle: 90.0,
-            raycasting_precision: 64.0,
-            map: MAP,
-
-            scale: 4.0,
-        }
-    }
-}
-
-const MAP: &[&[u8]] = &[
-    &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 0, 0, 1, 1, 0, 1, 0, 0, 1],
-    &[1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    &[1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    &[1, 0, 0, 1, 0, 1, 1, 0, 0, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
 
 #[wasm_bindgen]
 pub struct Game {
