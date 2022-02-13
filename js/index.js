@@ -2,11 +2,11 @@ const screen = document.getElementById("main-canvas");
 const screenContext = screen.getContext("2d");
 
 export function draw_line(x1, y1, x2, y2, css_color) {
-    screenContext.strokeStyle = css_color;
-    screenContext.beginPath();
-    screenContext.moveTo(x1, y1);
-    screenContext.lineTo(x2, y2);
-    screenContext.stroke();
+  screenContext.strokeStyle = css_color;
+  screenContext.beginPath();
+  screenContext.moveTo(x1, y1);
+  screenContext.lineTo(x2, y2);
+  screenContext.stroke();
 }
 
 export function clear_screen(width, height) {
