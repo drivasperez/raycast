@@ -18,6 +18,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[wasm_bindgen]
 pub struct Game {
     data: GameData,
+    held_inputs: [u32; 16],
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -31,6 +32,7 @@ impl Game {
     pub fn new() -> Self {
         Self {
             data: GameData::default(),
+            held_inputs: [0; 16],
         }
     }
 
@@ -49,6 +51,10 @@ impl Game {
 
     pub fn turn_player(&mut self, deg: f32) {
         self.data.player_angle += deg;
+    }
+
+    pub fn inputs_ptr(&mut self) -> *mut u32 {
+        &mut self.held_inputs as *mut _
     }
 
     fn draw_texture(&self, x: f32, wall_height: f32, texture_pos_x: usize, texture: &Texture) {
@@ -70,49 +76,51 @@ impl Game {
     }
 
     fn handle_input(&mut self) {
-        match &self.data.held_key {
-            // Up
-            Some(38) => {
-                let player_cos =
-                    self.data.player_angle.to_radians().cos() * self.data.player_speed_movement;
-                let player_sin =
-                    self.data.player_angle.to_radians().sin() * self.data.player_speed_movement;
+        for key in self.held_inputs {
+            match key {
+                // Up
+                38 => {
+                    let player_cos =
+                        self.data.player_angle.to_radians().cos() * self.data.player_speed_movement;
+                    let player_sin =
+                        self.data.player_angle.to_radians().sin() * self.data.player_speed_movement;
 
-                let new_x = self.data.player_x + player_cos;
-                let new_y = self.data.player_y + player_sin;
+                    let new_x = self.data.player_x + player_cos;
+                    let new_y = self.data.player_y + player_sin;
 
-                if self.data.map[new_y.floor() as usize][new_x.floor() as usize] == 0 {
-                    self.data.player_x = new_x;
-                    self.data.player_y = new_y;
+                    if self.data.map[new_y.floor() as usize][new_x.floor() as usize] == 0 {
+                        self.data.player_x = new_x;
+                        self.data.player_y = new_y;
+                    }
                 }
-            }
-            // Down
-            Some(40) => {
-                let player_cos =
-                    self.data.player_angle.to_radians().cos() * self.data.player_speed_movement;
-                let player_sin =
-                    self.data.player_angle.to_radians().sin() * self.data.player_speed_movement;
+                // Down
+                40 => {
+                    let player_cos =
+                        self.data.player_angle.to_radians().cos() * self.data.player_speed_movement;
+                    let player_sin =
+                        self.data.player_angle.to_radians().sin() * self.data.player_speed_movement;
 
-                let new_x = self.data.player_x - player_cos;
-                let new_y = self.data.player_y - player_sin;
+                    let new_x = self.data.player_x - player_cos;
+                    let new_y = self.data.player_y - player_sin;
 
-                if self.data.map[new_y.floor() as usize][new_x.floor() as usize] == 0 {
-                    self.data.player_x = new_x;
-                    self.data.player_y = new_y;
+                    if self.data.map[new_y.floor() as usize][new_x.floor() as usize] == 0 {
+                        self.data.player_x = new_x;
+                        self.data.player_y = new_y;
+                    }
                 }
+                // Left
+                37 => {
+                    self.data.player_angle -= self.data.player_speed_rotation;
+                    self.data.player_angle %= 360.0;
+                }
+                // Right
+                39 => {
+                    self.data.player_angle += self.data.player_speed_rotation;
+                    self.data.player_angle %= 360.0;
+                }
+                _ => {}
             }
-            // Left
-            Some(37) => {
-                self.data.player_angle -= self.data.player_speed_rotation;
-            }
-            // Right
-            Some(39) => {
-                self.data.player_angle += self.data.player_speed_rotation;
-            }
-            _ => {}
         }
-
-        self.data.held_key = None;
     }
 
     fn ray_casting(&mut self) {
