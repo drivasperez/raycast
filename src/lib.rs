@@ -60,6 +60,7 @@ impl Game {
     fn draw_pixel(&mut self, x: usize, y: usize, color: RgbColor) {
         let offset = 4 * (x + y * self.data.projection_width() as usize);
 
+        // Only actually draw if onscreen.
         if offset < self.screen_buffer_len() {
             self.screen_buffer[offset] = color.red;
             self.screen_buffer[offset + 1] = color.green;
@@ -211,7 +212,7 @@ impl Game {
             self.draw_line(
                 ray_count,
                 0,
-                (projection_half_height - wall_height) as usize,
+                (projection_half_height - wall_height).floor() as usize,
                 RgbColor {
                     red: 0,
                     green: 0,
