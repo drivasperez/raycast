@@ -2,6 +2,9 @@ const screen = document.getElementById("main-canvas");
 const screenContext = screen.getContext("2d");
 const heldKeys = new Set();
 
+let paused = false;
+
+
 export function draw_line(x1, y1, x2, y2, css_color) {
   screenContext.strokeStyle = css_color;
   screenContext.beginPath();
@@ -71,9 +74,11 @@ async function main() {
     const projectionHeight = data.projection_width();
 
     const gameLoop = () => {
-      clear_screen(projectionWidth, projectionHeight);
-      setInputs();
-      game.tick();
+      if (!paused) {
+        clear_screen(projectionWidth, projectionHeight);
+        setInputs();
+        game.tick();
+      }
 
       requestAnimationFrame(gameLoop);
     }
@@ -87,4 +92,24 @@ async function main() {
 
 window.onload = function () {
   main();
+}
+
+
+window.addEventListener('blur', event => {
+  if (!paused) {
+    paused = true;
+    renderFocusLost();
+  }
+})
+
+window.addEventListener('focus', event => {
+  paused = false;
+})
+
+function renderFocusLost() {
+  screenContext.fillStyle = 'rgba(0,0,0,0.5)';
+  screenContext.fillRect(0, 0, screen.width, screen.height);
+  screenContext.fillStyle = 'white';
+  screenContext.font = '10px sans-serif';
+  screenContext.fillText('CLICK TO FOCUS', 37, screen.height / 2);
 }
