@@ -1,5 +1,6 @@
 const screen = document.getElementById("main-canvas");
 const screenContext = screen.getContext("2d");
+screenContext.imageSmoothingEnabled = false;
 const heldKeys = new Set();
 
 let paused = false;
@@ -52,6 +53,25 @@ async function main() {
     const inputsPointer = game.inputs_ptr();
     const inputs = new Uint32Array(memory.buffer, inputsPointer, 16);
 
+    const screenBufferLength = game.screen_buffer_len();
+    const screenBufferPtr = game.screen_buffer_ptr();
+
+    screen.width = data.screen_width();
+    screen.height = data.screen_height();
+    screen.style.border = "1px solid black";
+
+    const screenBuffer = new Uint8ClampedArray(memory.buffer, screenBufferPtr, screenBufferLength);
+    console.log("screenBuffer length", screenBuffer.length);
+    const screenImageData = new ImageData(screenBuffer, data.projection_width(), data.projection_height());
+
+    const renderBuffer = () => {
+      let temp = document.createElement('canvas');
+      temp.width = screen.width;
+      temp.height = screen.height;
+      temp.getContext('2d').putImageData(screenImageData, 0, 0);
+      screenContext.drawImage(temp, 0, 0);
+    }
+
     const setInputs = () => {
       const held = [...heldKeys];
       for (let i = 0; i < 16; i++) {
@@ -59,9 +79,6 @@ async function main() {
       }
     }
 
-    screen.width = data.screen_width();
-    screen.height = data.screen_height();
-    screen.style.border = "1px solid black";
 
     const screenScale = data.scale();
     screenContext.scale(screenScale, screenScale);
@@ -78,6 +95,7 @@ async function main() {
         clear_screen(projectionWidth, projectionHeight);
         setInputs();
         game.tick();
+        renderBuffer();
       }
 
       requestAnimationFrame(gameLoop);

@@ -19,7 +19,7 @@ pub struct InMemoryTexture {
     pub(crate) width: f32,
     pub(crate) height: f32,
     pub(crate) bitmap: &'static [&'static [u8]],
-    pub(crate) colors: Vec<String>,
+    pub(crate) colors: Vec<RgbColor>,
 }
 
 #[derive(Clone)]
@@ -62,11 +62,23 @@ impl Texture {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct RgbColor {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
+    pub alpha: u8,
+}
+
+impl RgbColor {
+    pub fn rgb(red: u8, green: u8, blue: u8) -> Self {
+        Self {
+            red,
+            green,
+            blue,
+            alpha: 255,
+        }
+    }
 }
 
 impl From<&[u8; 4]> for RgbColor {
@@ -75,14 +87,20 @@ impl From<&[u8; 4]> for RgbColor {
             red: bytes[0],
             green: bytes[1],
             blue: bytes[2],
+            alpha: bytes[3],
         }
     }
 }
 
 impl ToString for RgbColor {
     fn to_string(&self) -> String {
-        let Self { red, green, blue } = *self;
-        format!("rgb({red},{green},{blue})")
+        let Self {
+            red,
+            green,
+            blue,
+            alpha,
+        } = *self;
+        format!("rgb({red},{green},{blue},{alpha})")
     }
 }
 
@@ -139,7 +157,7 @@ impl Default for GameData {
                         &[1, 1, 1, 1, 1, 1, 1, 1],
                         &[0, 1, 0, 0, 0, 1, 0, 0],
                     ],
-                    colors: vec!["brown".to_string(), "orange".to_string()],
+                    colors: vec![RgbColor::rgb(0, 0, 0), RgbColor::rgb(255, 255, 255)],
                 }),
                 texture,
             ],

@@ -1,6 +1,6 @@
 #![feature(array_chunks)]
 use crate::data::Texture;
-use data::GameData;
+use data::{GameData, RgbColor};
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 
@@ -19,6 +19,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub struct Game {
     data: GameData,
     held_inputs: [u32; 16],
+    screen_buffer: Vec<u8>,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -30,9 +31,13 @@ struct Ray {
 #[wasm_bindgen]
 impl Game {
     pub fn new() -> Self {
+        let data = GameData::default();
+        let buf_len = 4 * (data.projection_height() * data.projection_width()) as usize;
+
         Self {
-            data: GameData::default(),
+            data,
             held_inputs: [0; 16],
+            screen_buffer: vec![125; buf_len],
         }
     }
 
@@ -44,20 +49,54 @@ impl Game {
         &mut self.held_inputs as *mut _
     }
 
-    fn draw_texture(&self, x: f32, wall_height: f32, texture_pos_x: usize, texture: &Texture) {
-        let y_incrementer = (wall_height * 2.0) / texture.height();
+    pub fn screen_buffer_ptr(&self) -> *const u8 {
+        self.screen_buffer.as_ptr()
+    }
+
+    pub fn screen_buffer_len(&self) -> usize {
+        4 * (self.data.projection_height() * self.data.projection_width()) as usize
+    }
+
+    fn draw_pixel(&mut self, x: usize, y: usize, color: RgbColor) {
+        let offset = 4 * (x + y * self.data.projection_width() as usize);
+
+        self.screen_buffer[offset] = color.red;
+        self.screen_buffer[offset + 1] = color.green;
+        self.screen_buffer[offset + 2] = color.blue;
+        self.screen_buffer[offset + 3] = color.alpha;
+    }
+
+    fn draw_line(&mut self, x1: usize, y1: usize, y2: usize, color: RgbColor) {
+        for y in y1..y2 {
+            self.draw_pixel(x1, y, color)
+        }
+    }
+
+    fn draw_texture(
+        &mut self,
+        x: usize,
+        wall_height: f32,
+        texture_pos_x: usize,
+        texture_idx: usize,
+    ) {
+        let height = self.data.textures[texture_idx].height();
+        let y_incrementer = (wall_height * 2.0) / height;
         let mut y = self.data.projection_half_height() - wall_height;
 
-        for i in 0..texture.height() as usize {
+        for i in 0..height as usize {
+            let texture = &self.data.textures[texture_idx];
             let color = match texture {
                 Texture::InMemory(texture) => {
-                    texture.colors[texture.bitmap[i][texture_pos_x] as usize].clone()
+                    texture.colors[texture.bitmap[i][texture_pos_x] as usize]
                 }
-                Texture::File(texture) => {
-                    texture.data[texture_pos_x + i * texture.width as usize].to_string()
-                }
+                Texture::File(texture) => texture.data[texture_pos_x + i * texture.width as usize],
             };
-            util::draw_line(x, y, x, y + (y_incrementer + 0.5), color);
+            self.draw_line(
+                x,
+                y.floor() as usize,
+                (y + (y_incrementer + 0.5)).floor() as usize,
+                color,
+            );
             y += y_incrementer;
         }
     }
@@ -121,57 +160,72 @@ impl Game {
     }
 
     fn ray_casting(&mut self) {
-        let data = &self.data;
-        let mut ray_angle = data.player_angle - data.player_half_fov();
+        let GameData {
+            player_angle,
+            player_x,
+            player_y,
+            raycasting_precision,
+            map,
+            ..
+        } = self.data;
+        let player_half_fov = self.data.player_half_fov();
+        let projection_width = self.data.projection_width();
+        let projection_height = self.data.projection_height();
+        let projection_half_height = self.data.projection_half_height();
 
-        for i in 0..data.projection_width() as usize {
+        let mut ray_angle = player_angle - player_half_fov;
+
+        for i in 0..projection_width as usize {
             let mut ray = Ray {
-                x: data.player_x as f32,
-                y: data.player_y as f32,
+                x: player_x as f32,
+                y: player_y as f32,
             };
-            let ray_cos = ray_angle.to_radians().cos() / data.raycasting_precision;
-            let ray_sin = ray_angle.to_radians().sin() / data.raycasting_precision;
+            let ray_cos = ray_angle.to_radians().cos() / raycasting_precision;
+            let ray_sin = ray_angle.to_radians().sin() / raycasting_precision;
 
             let mut wall = 0;
             while wall == 0 {
                 ray.x += ray_cos;
                 ray.y += ray_sin;
-                wall = data.map[ray.y.floor() as usize][ray.x.floor() as usize];
+                wall = map[ray.y.floor() as usize][ray.x.floor() as usize];
             }
 
-            let mut distance = ((data.player_x as f32 - ray.x).powi(2)
-                + (data.player_y as f32 - ray.y).powi(2))
-            .sqrt();
+            let mut distance =
+                ((player_x as f32 - ray.x).powi(2) + (player_y as f32 - ray.y).powi(2)).sqrt();
 
             // Correct fish-eye effect. adj = cos * hyp
-            distance *= (ray_angle - data.player_angle).to_radians().cos();
+            distance *= (ray_angle - player_angle).to_radians().cos();
 
-            let wall_height = f32::floor(data.projection_half_height() / distance);
-            let texture = &data.textures[wall as usize - 1];
+            let wall_height = f32::floor(projection_half_height / distance);
+            let texture = &self.data.textures[wall as usize - 1];
             let texture_pos_x =
                 (texture.width() * (ray.x + ray.y) % texture.width()).floor() as usize;
 
-            let ray_count = i as f32;
-            // Sky
-            util::draw_line(
-                ray_count,
-                0.0,
-                ray_count,
-                data.projection_half_height() - wall_height,
-                "black".to_string(),
-            );
+            let ray_count = i;
+
             // Walls
-            self.draw_texture(ray_count, wall_height, texture_pos_x, texture);
+            self.draw_texture(ray_count, wall_height, texture_pos_x, wall as usize - 1);
+            // Sky
+            self.draw_line(
+                ray_count,
+                0,
+                (projection_half_height - wall_height) as usize,
+                RgbColor {
+                    red: 0,
+                    green: 0,
+                    blue: 0,
+                    alpha: 255,
+                },
+            );
             // Floor
-            util::draw_line(
+            self.draw_line(
                 ray_count,
-                data.projection_half_height() + wall_height,
-                ray_count,
-                data.projection_height(),
-                "rgb(95, 87, 79)".to_string(),
+                (projection_half_height + wall_height).floor() as usize,
+                projection_height as usize,
+                RgbColor::rgb(95, 87, 79),
             );
 
-            ray_angle += data.increment_angle();
+            ray_angle += self.data.increment_angle();
         }
     }
 
