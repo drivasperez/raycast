@@ -60,10 +60,12 @@ impl Game {
     fn draw_pixel(&mut self, x: usize, y: usize, color: RgbColor) {
         let offset = 4 * (x + y * self.data.projection_width() as usize);
 
-        self.screen_buffer[offset] = color.red;
-        self.screen_buffer[offset + 1] = color.green;
-        self.screen_buffer[offset + 2] = color.blue;
-        self.screen_buffer[offset + 3] = color.alpha;
+        if offset < self.screen_buffer_len() {
+            self.screen_buffer[offset] = color.red;
+            self.screen_buffer[offset + 1] = color.green;
+            self.screen_buffer[offset + 2] = color.blue;
+            self.screen_buffer[offset + 3] = color.alpha;
+        }
     }
 
     fn draw_line(&mut self, x1: usize, y1: usize, y2: usize, color: RgbColor) {
@@ -242,11 +244,6 @@ pub fn main_js() -> Result<(), JsValue> {
     // It's disabled in release mode so it doesn't bloat up the file size.
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
-
-    // Your code goes here!
-    console::log_1(&JsValue::from_str("Hello world!"));
-
-    util::draw_line(1.0, 200.0, 1.0, 50.0, "#000000".to_string());
 
     Ok(())
 }

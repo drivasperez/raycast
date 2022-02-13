@@ -6,20 +6,8 @@ const heldKeys = new Set();
 let paused = false;
 
 
-export function draw_line(x1, y1, x2, y2, css_color) {
-  screenContext.strokeStyle = css_color;
-  screenContext.beginPath();
-  screenContext.moveTo(x1, y1);
-  screenContext.lineTo(x2, y2);
-  screenContext.stroke();
-}
-
-export function clear_screen(width, height) {
+function clearScreen(width, height) {
   screenContext.clearRect(0, 0, width, height);
-}
-
-export function set_stroke_style(style) {
-  screenContext.strokeStyle = style;
 }
 
 export function load_texture_data(id, width, height) {
@@ -92,7 +80,7 @@ async function main() {
 
     const gameLoop = () => {
       if (!paused) {
-        clear_screen(projectionWidth, projectionHeight);
+        clearScreen(projectionWidth, projectionHeight);
         setInputs();
         game.tick();
         renderBuffer();
