@@ -1,11 +1,76 @@
+use crate::util;
 use wasm_bindgen::prelude::*;
 
 #[derive(Clone)]
-pub struct Texture {
+pub struct InMemoryTexture {
     pub(crate) width: f32,
     pub(crate) height: f32,
     pub(crate) bitmap: &'static [&'static [u8]],
     pub(crate) colors: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct FileTexture {
+    pub(crate) width: f32,
+    pub(crate) height: f32,
+    pub(crate) data: Vec<RgbColor>,
+}
+
+#[derive(Clone)]
+pub enum Texture {
+    InMemory(InMemoryTexture),
+    File(FileTexture),
+}
+
+impl Texture {
+    pub fn height(&self) -> f32 {
+        match self {
+            Texture::InMemory(t) => t.height,
+            Texture::File(t) => t.height,
+        }
+    }
+
+    pub fn width(&self) -> f32 {
+        match self {
+            Texture::InMemory(t) => t.width,
+            Texture::File(t) => t.width,
+        }
+    }
+
+    fn load_from_id(id: &str, width: f32, height: f32) -> Self {
+        let bytes = util::load_texture_data(id.to_string(), width, height);
+        let rgb_data: Vec<RgbColor> = bytes.array_chunks::<4>().map(|s| s.into()).collect();
+
+        Self::File(FileTexture {
+            width,
+            height,
+            data: rgb_data,
+        })
+    }
+}
+
+#[derive(Clone)]
+pub struct RgbColor {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+}
+
+impl From<&[u8; 4]> for RgbColor {
+    fn from(bytes: &[u8; 4]) -> Self {
+        Self {
+            red: bytes[0],
+            green: bytes[1],
+            blue: bytes[2],
+        }
+    }
+}
+
+impl ToString for RgbColor {
+    fn to_string(&self) -> String {
+        let Self { red, green, blue } = *self;
+        format!("rgb({red},{green},{blue})")
+    }
 }
 
 #[wasm_bindgen]
@@ -88,6 +153,8 @@ impl GameData {
 
 impl Default for GameData {
     fn default() -> Self {
+        let texture = Texture::load_from_id("texture", 16.0, 16.0);
+
         Self {
             screen_width: 640.0,
             screen_height: 480.0,
@@ -103,34 +170,37 @@ impl Default for GameData {
             held_key: None,
             player_speed_movement: 0.5,
             player_speed_rotation: 5.0,
-            textures: vec![Texture {
-                width: 8.0,
-                height: 8.0,
-                bitmap: &[
-                    &[1, 1, 1, 1, 1, 1, 1, 1],
-                    &[0, 0, 0, 1, 0, 0, 0, 1],
-                    &[1, 1, 1, 1, 1, 1, 1, 1],
-                    &[0, 1, 0, 0, 0, 1, 0, 0],
-                    &[1, 1, 1, 1, 1, 1, 1, 1],
-                    &[0, 0, 0, 1, 0, 0, 0, 1],
-                    &[1, 1, 1, 1, 1, 1, 1, 1],
-                    &[0, 1, 0, 0, 0, 1, 0, 0],
-                ],
-                colors: vec!["brown".to_string(), "orange".to_string()],
-            }],
+            textures: vec![
+                Texture::InMemory(InMemoryTexture {
+                    width: 8.0,
+                    height: 8.0,
+                    bitmap: &[
+                        &[1, 1, 1, 1, 1, 1, 1, 1],
+                        &[0, 0, 0, 1, 0, 0, 0, 1],
+                        &[1, 1, 1, 1, 1, 1, 1, 1],
+                        &[0, 1, 0, 0, 0, 1, 0, 0],
+                        &[1, 1, 1, 1, 1, 1, 1, 1],
+                        &[0, 0, 0, 1, 0, 0, 0, 1],
+                        &[1, 1, 1, 1, 1, 1, 1, 1],
+                        &[0, 1, 0, 0, 0, 1, 0, 0],
+                    ],
+                    colors: vec!["brown".to_string(), "orange".to_string()],
+                }),
+                texture,
+            ],
         }
     }
 }
 
 const MAP: &[&[u8]] = &[
-    &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 0, 0, 1, 1, 0, 1, 0, 0, 1],
-    &[1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    &[1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    &[1, 0, 0, 1, 0, 1, 1, 0, 0, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    &[2, 2, 1, 1, 1, 2, 2, 2, 2, 2],
+    &[2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+    &[2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+    &[2, 0, 0, 1, 1, 0, 2, 0, 0, 2],
+    &[2, 0, 0, 2, 0, 0, 2, 0, 0, 2],
+    &[2, 0, 0, 2, 0, 0, 2, 0, 0, 2],
+    &[2, 0, 0, 2, 0, 2, 2, 0, 0, 2],
+    &[2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+    &[2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+    &[2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
 ];

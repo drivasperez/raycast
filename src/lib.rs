@@ -1,3 +1,4 @@
+#![feature(array_chunks)]
 use crate::data::Texture;
 use data::GameData;
 use wasm_bindgen::prelude::*;
@@ -51,17 +52,19 @@ impl Game {
     }
 
     fn draw_texture(&self, x: f32, wall_height: f32, texture_pos_x: usize, texture: &Texture) {
-        let y_incrementer = (wall_height * 2.0) / texture.height;
+        let y_incrementer = (wall_height * 2.0) / texture.height();
         let mut y = self.data.projection_half_height() - wall_height;
 
-        for i in 0..texture.height as usize {
-            util::draw_line(
-                x,
-                y,
-                x,
-                y + (y_incrementer + 0.5),
-                texture.colors[texture.bitmap[i][texture_pos_x] as usize].clone(),
-            );
+        for i in 0..texture.height() as usize {
+            let color = match texture {
+                Texture::InMemory(texture) => {
+                    texture.colors[texture.bitmap[i][texture_pos_x] as usize].clone()
+                }
+                Texture::File(texture) => {
+                    texture.data[texture_pos_x + i * texture.width as usize].to_string()
+                }
+            };
+            util::draw_line(x, y, x, y + (y_incrementer + 0.5), color);
             y += y_incrementer;
         }
     }
@@ -140,7 +143,8 @@ impl Game {
 
             let wall_height = f32::floor(data.projection_half_height() / distance);
             let texture = &data.textures[wall as usize - 1];
-            let texture_pos_x = (texture.width * (ray.x + ray.y) % texture.width).floor() as usize;
+            let texture_pos_x =
+                (texture.width() * (ray.x + ray.y) % texture.width()).floor() as usize;
 
             let ray_count = i as f32;
             // Sky

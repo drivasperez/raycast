@@ -17,9 +17,23 @@ export function set_stroke_style(style) {
   screenContext.strokeStyle = style;
 }
 
-(async function main() {
+export function load_texture_data(id, width, height) {
+  let image = document.getElementById(id);
+  let canvas = document.createElement('canvas');
+  canvas.width = texture.width;
+  canvas.height = texture.height;
+
+  let canvasContext = canvas.getContext("2d");
+  canvasContext.drawImage(image, 0, 0, width, height);
+  const imageData = canvasContext.getImageData(0, 0, width, height).data;
+  console.log("Here's the image", imageData);
+  return imageData;
+}
+
+async function main() {
   try {
-    const { GameData, Game } = await import("/pkg/index.js");
+    const { Game } = await import("/pkg/index.js");
+
     const game = Game.new();
     const data = game.data();
 
@@ -51,5 +65,8 @@ export function set_stroke_style(style) {
   } catch (err) {
     console.error(err);
   }
-})();
+};
 
+window.onload = function () {
+  main();
+}

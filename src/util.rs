@@ -7,10 +7,6 @@ extern "C" {
     pub fn clear_screen();
 
     pub fn set_stroke_style(s: String);
-}
 
-/// Cast degrees to radians
-pub fn degree_to_radians(degree: f32) -> f32 {
-    let pi = std::f32::consts::PI;
-    degree * pi / 180.0
+    pub fn load_texture_data(id: String, width: f32, height: f32) -> Vec<u8>;
 }
