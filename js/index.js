@@ -48,6 +48,7 @@ async function main() {
 
     const inputsPointer = game.inputs_ptr();
     const inputs = new Uint32Array(memory.buffer, inputsPointer, 16);
+
     const setInputs = () => {
       const held = [...heldKeys];
       for (let i = 0; i < 16; i++) {

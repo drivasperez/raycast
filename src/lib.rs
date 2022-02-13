@@ -40,19 +40,6 @@ impl Game {
         self.data.clone()
     }
 
-    pub fn set_held_key(&mut self, k: u32) {
-        self.data.held_key = Some(k);
-    }
-
-    pub fn move_player(&mut self, x: f32, y: f32) {
-        self.data.player_x += x;
-        self.data.player_y += y;
-    }
-
-    pub fn turn_player(&mut self, deg: f32) {
-        self.data.player_angle += deg;
-    }
-
     pub fn inputs_ptr(&mut self) -> *mut u32 {
         &mut self.held_inputs as *mut _
     }
@@ -87,10 +74,15 @@ impl Game {
 
                     let new_x = self.data.player_x + player_cos;
                     let new_y = self.data.player_y + player_sin;
+                    let check_x = (new_x + player_cos * self.data.player_radius).floor() as usize;
+                    let check_y = (new_y + player_sin * self.data.player_radius).floor() as usize;
 
-                    if self.data.map[new_y.floor() as usize][new_x.floor() as usize] == 0 {
-                        self.data.player_x = new_x;
+                    if self.data.map[check_y][self.data.player_x.floor() as usize] == 0 {
                         self.data.player_y = new_y;
+                    }
+
+                    if self.data.map[self.data.player_y.floor() as usize][check_x] == 0 {
+                        self.data.player_x = new_x;
                     }
                 }
                 // Down
@@ -102,10 +94,15 @@ impl Game {
 
                     let new_x = self.data.player_x - player_cos;
                     let new_y = self.data.player_y - player_sin;
+                    let check_x = (new_x - player_cos * self.data.player_radius).floor() as usize;
+                    let check_y = (new_y - player_sin * self.data.player_radius).floor() as usize;
 
-                    if self.data.map[new_y.floor() as usize][new_x.floor() as usize] == 0 {
-                        self.data.player_x = new_x;
+                    if self.data.map[check_y][self.data.player_x.floor() as usize] == 0 {
                         self.data.player_y = new_y;
+                    }
+
+                    if self.data.map[self.data.player_y.floor() as usize][check_x] == 0 {
+                        self.data.player_x = new_x;
                     }
                 }
                 // Left
