@@ -45,7 +45,6 @@ async function main() {
 
     screen.width = data.screen_width();
     screen.height = data.screen_height();
-    screen.style.border = "1px solid black";
 
     const screenBuffer = new Uint8ClampedArray(memory.buffer, screenBufferPtr, screenBufferLength);
     console.log("screenBuffer length", screenBuffer.length);

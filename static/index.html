@@ -3,12 +3,31 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>My Rust + Webpack project!</title>
+  <title>Raycasting</title>
   <script defer src="index.js"></script>
+  <style>
+    html {
+      padding: 0px;
+    }
+
+    body {
+      font-family: sans-serif;
+      margin: 0px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #a4ccff;
+    }
+  </style>
 </head>
 
 <body>
-  <canvas id="main-canvas"></canvas>
+  <main>
+    <h1>Raycasting with Wasm</h1>
+    <canvas id="main-canvas"></canvas>
+    <p>Use arrow keys to move</p>
+  </main>
   <img id="texture" style="display: none;" src="texture.png">
   <img id="background" style="display: none;" src="background.png">
 </body>
