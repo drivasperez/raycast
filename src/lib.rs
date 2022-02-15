@@ -2,7 +2,6 @@
 use crate::data::Texture;
 use data::{GameData, RgbColor};
 use wasm_bindgen::prelude::*;
-use web_sys::console;
 
 mod data;
 mod util;
