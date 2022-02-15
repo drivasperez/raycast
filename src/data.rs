@@ -28,6 +28,18 @@ pub struct FileTexture {
     pub(crate) height: f32,
     pub(crate) data: Vec<RgbColor>,
 }
+impl FileTexture {
+    fn load_from_id(id: &str, width: f32, height: f32) -> Self {
+        let bytes = util::load_texture_data(id.to_string(), width, height);
+        let rgb_data: Vec<RgbColor> = bytes.array_chunks::<4>().map(|s| s.into()).collect();
+
+        FileTexture {
+            width,
+            height,
+            data: rgb_data,
+        }
+    }
+}
 
 #[derive(Clone)]
 pub enum Texture {
@@ -48,17 +60,6 @@ impl Texture {
             Texture::InMemory(t) => t.width,
             Texture::File(t) => t.width,
         }
-    }
-
-    fn load_from_id(id: &str, width: f32, height: f32) -> Self {
-        let bytes = util::load_texture_data(id.to_string(), width, height);
-        let rgb_data: Vec<RgbColor> = bytes.array_chunks::<4>().map(|s| s.into()).collect();
-
-        Self::File(FileTexture {
-            width,
-            height,
-            data: rgb_data,
-        })
     }
 }
 
@@ -122,11 +123,12 @@ pub struct GameData {
 
     pub(crate) scale: f32,
     pub(crate) textures: Vec<Texture>,
+    pub(crate) backgrounds: Vec<FileTexture>,
 }
 
 impl Default for GameData {
     fn default() -> Self {
-        let texture = Texture::load_from_id("texture", 16.0, 16.0);
+        let texture = Texture::File(FileTexture::load_from_id("texture", 16.0, 16.0));
 
         Self {
             screen_width: 640.0,
@@ -139,7 +141,7 @@ impl Default for GameData {
             raycasting_precision: 64.0,
             map: MAP,
 
-            scale: 1.0,
+            scale: 4.0,
             player_speed_movement: 0.05,
             player_speed_rotation: 3.0,
             player_radius: 10.0,
@@ -161,6 +163,7 @@ impl Default for GameData {
                 }),
                 texture,
             ],
+            backgrounds: vec![FileTexture::load_from_id("background", 360.0, 60.0)],
         }
     }
 }

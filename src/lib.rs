@@ -104,6 +104,18 @@ impl Game {
         }
     }
 
+    fn draw_background(&mut self, x: usize, y1: usize, y2: usize, background_idx: usize) {
+        let offset = self.data.player_angle + x as f32;
+        for y in y1..y2 {
+            let background = &self.data.backgrounds[background_idx];
+            let texture_x = (offset % background.width).ceil() as usize;
+            let texture_y = (y as f32 % background.height).ceil() as usize;
+
+            let color = background.data[texture_x + texture_y * background.width as usize];
+            self.draw_pixel(x, y, color);
+        }
+    }
+
     fn handle_input(&mut self) {
         for key in self.held_inputs {
             match key {
@@ -209,16 +221,11 @@ impl Game {
             // Walls
             self.draw_texture(ray_count, wall_height, texture_pos_x, wall as usize - 1);
             // Sky
-            self.draw_line(
+            self.draw_background(
                 ray_count,
                 0,
                 (projection_half_height - wall_height).floor() as usize,
-                RgbColor {
-                    red: 0,
-                    green: 0,
-                    blue: 0,
-                    alpha: 255,
-                },
+                0,
             );
             // Floor
             self.draw_line(

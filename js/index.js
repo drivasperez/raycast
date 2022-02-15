@@ -1,6 +1,5 @@
 const screen = document.getElementById("main-canvas");
 const screenContext = screen.getContext("2d");
-screenContext.imageSmoothingEnabled = false;
 const heldKeys = new Set();
 
 let paused = false;
@@ -13,8 +12,8 @@ function clearScreen(width, height) {
 export function load_texture_data(id, width, height) {
   let image = document.getElementById(id);
   let canvas = document.createElement('canvas');
-  canvas.width = texture.width;
-  canvas.height = texture.height;
+  canvas.width = image.width;
+  canvas.height = image.height;
 
   let canvasContext = canvas.getContext("2d");
   canvasContext.drawImage(image, 0, 0, width, height);
@@ -57,6 +56,7 @@ async function main() {
       temp.width = screen.width;
       temp.height = screen.height;
       temp.getContext('2d').putImageData(screenImageData, 0, 0);
+      screenContext.imageSmoothingEnabled = false;
       screenContext.drawImage(temp, 0, 0);
     }
 
