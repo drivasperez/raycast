@@ -106,7 +106,7 @@ impl Game {
         texture_idx: usize,
     ) {
         let height = self.data.textures[texture_idx].height();
-        let y_incrementer = (wall_height * 2.0) / height;
+        let y_incrementer = (wall_height * 2.0) / height as f32;
         let mut y = self.data.projection_half_height() - wall_height;
 
         for i in 0..height as usize {
@@ -120,7 +120,7 @@ impl Game {
             self.draw_line(
                 x,
                 y.floor() as usize,
-                (y + (y_incrementer + 0.5)).floor() as usize,
+                (y + (y_incrementer + 2.0)).floor() as usize,
                 color,
             );
             y += y_incrementer;
@@ -132,11 +132,37 @@ impl Game {
         let offset = angle + x as f32;
         for y in y1..y2 {
             let background = &self.data.backgrounds[background_idx];
-            let texture_x = (offset % background.width).ceil() as usize;
-            let texture_y = (y as f32 % background.height).ceil() as usize;
+            let texture_x = (offset.mod_euc(background.width as f32)).ceil() as usize;
+            let texture_y = y % background.height as usize;
 
             let color = background.data[texture_x + texture_y * background.width as usize];
             self.draw_pixel(x, y, color);
+        }
+    }
+
+    fn draw_floor(&mut self, x1: usize, wall_height: f32, ray_angle: f32) {
+        let start = (self.data.projection_half_height() + wall_height) as usize + 1;
+        let direction_cos = ray_angle.to_radians().cos();
+        let direction_sin = ray_angle.to_radians().sin();
+
+        for y in start..self.data.projection_height() as usize {
+            let mut distance =
+                self.data.projection_height() / ((2 * y) as f32 - self.data.projection_height());
+
+            // Correct for fisheye
+            distance =
+                distance / (self.data.player_angle.to_radians() - ray_angle.to_radians()).cos();
+
+            let tile_x = (distance * direction_cos) + self.data.player_x;
+            let tile_y = (distance * direction_sin) + self.data.player_y;
+            let tile = self.data.map[tile_y.floor() as usize][tile_x.floor() as usize];
+            let texture = self.data.floor_textures.get(tile as usize);
+            if let Some(texture) = texture {
+                let texture_x = (tile_x * texture.width as f32) as usize % texture.width as usize;
+                let texture_y = (tile_y * texture.height as f32) as usize % texture.height as usize;
+                let color = texture.data[texture_x + texture_y * texture.width as usize];
+                self.draw_pixel(x1, y, color);
+            }
         }
     }
 
@@ -209,7 +235,6 @@ impl Game {
         } = self.data;
         let player_half_fov = self.data.player_half_fov();
         let projection_width = self.data.projection_width();
-        let projection_height = self.data.projection_height();
         let projection_half_height = self.data.projection_half_height();
 
         let mut ray_angle = player_angle - player_half_fov;
@@ -237,8 +262,8 @@ impl Game {
 
             let wall_height = f32::floor(projection_half_height / distance);
             let texture = &self.data.textures[wall as usize - 1];
-            let texture_pos_x =
-                (texture.width() * (ray.x + ray.y) % texture.width()).floor() as usize;
+            let texture_pos_x = (texture.width() as f32 * (ray.x + ray.y) % texture.width() as f32)
+                .floor() as usize;
 
             let ray_count = i;
 
@@ -252,12 +277,7 @@ impl Game {
                 0,
             );
             // Floor
-            self.draw_line(
-                ray_count,
-                (projection_half_height + wall_height).floor() as usize,
-                projection_height as usize,
-                RgbColor::rgb(95, 87, 79),
-            );
+            self.draw_floor(ray_count, wall_height, ray_angle);
 
             ray_angle += self.data.increment_angle();
         }

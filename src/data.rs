@@ -16,20 +16,20 @@ const MAP: &[&[u8]] = &[
 
 #[derive(Clone)]
 pub struct InMemoryTexture {
-    pub(crate) width: f32,
-    pub(crate) height: f32,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
     pub(crate) bitmap: &'static [&'static [u8]],
     pub(crate) colors: Vec<RgbColor>,
 }
 
 #[derive(Clone)]
 pub struct FileTexture {
-    pub(crate) width: f32,
-    pub(crate) height: f32,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
     pub(crate) data: Vec<RgbColor>,
 }
 impl FileTexture {
-    fn load_from_id(id: &str, width: f32, height: f32) -> Self {
+    fn load_from_id(id: &str, width: u32, height: u32) -> Self {
         let bytes = util::load_texture_data(id.to_string(), width, height);
         let rgb_data: Vec<RgbColor> = bytes.array_chunks::<4>().map(|s| s.into()).collect();
 
@@ -48,14 +48,14 @@ pub enum Texture {
 }
 
 impl Texture {
-    pub fn height(&self) -> f32 {
+    pub fn height(&self) -> u32 {
         match self {
             Texture::InMemory(t) => t.height,
             Texture::File(t) => t.height,
         }
     }
 
-    pub fn width(&self) -> f32 {
+    pub fn width(&self) -> u32 {
         match self {
             Texture::InMemory(t) => t.width,
             Texture::File(t) => t.width,
@@ -63,7 +63,7 @@ impl Texture {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct RgbColor {
     pub red: u8,
     pub green: u8,
@@ -123,12 +123,13 @@ pub struct GameData {
 
     pub(crate) scale: f32,
     pub(crate) textures: Vec<Texture>,
+    pub(crate) floor_textures: Vec<FileTexture>,
     pub(crate) backgrounds: Vec<FileTexture>,
 }
 
 impl Default for GameData {
     fn default() -> Self {
-        let texture = Texture::File(FileTexture::load_from_id("texture", 16.0, 16.0));
+        let texture = Texture::File(FileTexture::load_from_id("texture", 16, 16));
 
         Self {
             screen_width: 640.0,
@@ -147,8 +148,8 @@ impl Default for GameData {
             player_radius: 10.0,
             textures: vec![
                 Texture::InMemory(InMemoryTexture {
-                    width: 8.0,
-                    height: 8.0,
+                    width: 8,
+                    height: 8,
                     bitmap: &[
                         &[1, 1, 1, 1, 1, 1, 1, 1],
                         &[0, 0, 0, 1, 0, 0, 0, 1],
@@ -163,7 +164,8 @@ impl Default for GameData {
                 }),
                 texture,
             ],
-            backgrounds: vec![FileTexture::load_from_id("background", 360.0, 60.0)],
+            backgrounds: vec![FileTexture::load_from_id("background", 360, 60)],
+            floor_textures: vec![FileTexture::load_from_id("floor", 16, 16)],
         }
     }
 }
