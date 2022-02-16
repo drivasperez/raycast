@@ -21,6 +21,28 @@ pub struct Game {
     screen_buffer: Vec<u8>,
 }
 
+trait Euclidean {
+    fn div_euc(self, rhs: Self) -> Self;
+    fn mod_euc(self, rhs: Self) -> Self;
+}
+
+impl Euclidean for f32 {
+    fn div_euc(self, rhs: Self) -> Self {
+        let q = self / rhs;
+        if self % rhs < 0.0 {
+            return if rhs > 0.0 { q - 1.0 } else { q + 1.0 };
+        }
+        q
+    }
+    fn mod_euc(self, rhs: Self) -> Self {
+        let r = self % rhs;
+        if r < 0.0 {
+            return if rhs > 0.0 { r + rhs } else { r - rhs };
+        }
+        r
+    }
+}
+
 #[derive(Clone, Copy, PartialEq)]
 struct Ray {
     x: f32,
@@ -104,7 +126,8 @@ impl Game {
     }
 
     fn draw_background(&mut self, x: usize, y1: usize, y2: usize, background_idx: usize) {
-        let offset = self.data.player_angle + x as f32;
+        let angle = self.data.player_angle;
+        let offset = angle + x as f32;
         for y in y1..y2 {
             let background = &self.data.backgrounds[background_idx];
             let texture_x = (offset % background.width).ceil() as usize;
@@ -161,12 +184,12 @@ impl Game {
                 // Left
                 37 => {
                     self.data.player_angle -= self.data.player_speed_rotation;
-                    self.data.player_angle %= 360.0;
+                    self.data.player_angle = self.data.player_angle.mod_euc(360.0);
                 }
                 // Right
                 39 => {
                     self.data.player_angle += self.data.player_speed_rotation;
-                    self.data.player_angle %= 360.0;
+                    self.data.player_angle = self.data.player_angle.mod_euc(360.0);
                 }
                 _ => {}
             }

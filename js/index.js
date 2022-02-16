@@ -9,6 +9,11 @@ function clearScreen(width, height) {
   screenContext.clearRect(0, 0, width, height);
 }
 
+export function set_debug_message(msg) {
+  let debug_window = document.getElementById("debug");
+  debug_window.innerText = msg;
+}
+
 export function load_texture_data(id, width, height) {
   let image = document.getElementById(id);
   let canvas = document.createElement('canvas');
