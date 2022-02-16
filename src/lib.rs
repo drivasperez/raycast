@@ -27,6 +27,7 @@ trait Euclidean {
 }
 
 impl Euclidean for f32 {
+    #[inline(always)]
     fn div_euc(self, rhs: Self) -> Self {
         let q = self / rhs;
         if self % rhs < 0.0 {
@@ -34,6 +35,7 @@ impl Euclidean for f32 {
         }
         q
     }
+    #[inline(always)]
     fn mod_euc(self, rhs: Self) -> Self {
         let r = self % rhs;
         if r < 0.0 {

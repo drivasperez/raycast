@@ -1,6 +1,7 @@
 const screen = document.getElementById("main-canvas");
 const screenContext = screen.getContext("2d");
 const heldKeys = new Set();
+const tempBuf = document.createElement('canvas');
 
 let paused = false;
 
@@ -56,12 +57,11 @@ async function main() {
     const screenImageData = new ImageData(screenBuffer, data.projection_width(), data.projection_height());
 
     const renderBuffer = () => {
-      let temp = document.createElement('canvas');
-      temp.width = screen.width;
-      temp.height = screen.height;
-      temp.getContext('2d').putImageData(screenImageData, 0, 0);
+      tempBuf.width = screen.width;
+      tempBuf.height = screen.height;
+      tempBuf.getContext('2d').putImageData(screenImageData, 0, 0);
       screenContext.imageSmoothingEnabled = false;
-      screenContext.drawImage(temp, 0, 0);
+      screenContext.drawImage(tempBuf, 0, 0);
     }
 
     const setInputs = () => {
