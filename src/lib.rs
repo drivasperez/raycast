@@ -273,7 +273,7 @@ impl Game {
             self.draw_background(
                 ray_count,
                 0,
-                (projection_half_height - wall_height).floor() as usize,
+                (projection_half_height - wall_height) as usize,
                 0,
             );
             // Floor
